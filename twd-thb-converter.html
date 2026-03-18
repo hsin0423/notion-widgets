@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TWD → THB 匯率轉換</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F2EC;
+    --surface: #FFFDF8;
+    --border: #D8D2C4;
+    --text: #1A1714;
+    --muted: #8A8275;
+    --accent: #C4552A;
+    --accent-light: #F0E8E3;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    min-height: 100vh;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 28px 22px;
+    box-shadow: 4px 4px 0px var(--border);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .pair {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .rate-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .input-block {
+    margin-bottom: 8px;
+  }
+
+  .input-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--accent);
+  }
+
+  .currency-tag {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 12px 14px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    color: var(--text);
+    min-width: 60px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text);
+    padding: 12px 14px;
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .swap-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .swap-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .result-block {
+    margin-top: 18px;
+    padding: 16px;
+    background: var(--accent-light);
+    border-radius: 2px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .result-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .result-amount {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .result-unit {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .footer {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .updated {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .attribution {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+  }
+
+  .attribution:hover { color: var(--accent); }
+
+  .error-msg {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: var(--mono);
+    margin-top: 8px;
+    text-align: center;
+    display: none;
+  }
+
+  .loading {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px 0;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div>
+      <div class="pair">匯率轉換</div>
+    </div>
+    <div class="rate-badge" id="rateBadge">載入中…</div>
+  </div>
+
+  <div class="input-block">
+    <div class="input-label" id="fromLabel">台灣新台幣</div>
+    <div class="input-row">
+      <div class="currency-tag" id="fromTag">TWD</div>
+      <input type="number" id="fromInput" placeholder="0" value="1000" min="0" step="any">
+    </div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <button class="swap-btn" id="swapBtn" title="互換幣別">⇅</button>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="input-block">
+    <div class="input-label" id="toLabel">泰國泰銖</div>
+    <div class="input-row">
+      <div class="currency-tag" id="toTag">THB</div>
+      <input type="number" id="toInput" placeholder="0" min="0" step="any">
+    </div>
+  </div>
+
+  <div class="result-block" id="resultBlock">
+    <div class="result-label">換算結果</div>
+    <div class="result-amount" id="resultAmount"><span class="loading">取得匯率中…</span></div>
+  </div>
+
+  <div class="error-msg" id="errorMsg">無法取得即時匯率，請稍後再試</div>
+
+  <div class="footer">
+    <span class="updated" id="updatedTime">—</span>
+    <a class="attribution" href="https://www.exchangerate-api.com" target="_blank">Rates By ExchangeRate-API</a>
+  </div>
+</div>
+
+<script>
+  let rate = null;
+  let isSwapped = false;
+
+  const CURRENCIES = {
+    TWD: '台灣新台幣',
+    THB: '泰國泰銖'
+  };
+
+  async function fetchRate() {
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+      const data = await res.json();
+      if (data.result === 'success') {
+        rate = data.rates.THB;
+        const d = new Date(data.time_last_update_utc);
+        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        document.getElementById('updatedTime').textContent = `更新：${dateStr}`;
+        document.getElementById('rateBadge').textContent = `1 TWD = ${rate.toFixed(4)} THB`;
+        document.getElementById('errorMsg').style.display = 'none';
+        convert('from');
+      } else {
+        throw new Error('API error');
+      }
+    } catch(e) {
+      document.getElementById('rateBadge').textContent = '匯率取得失敗';
+      document.getElementById('errorMsg').style.display = 'block';
+      document.getElementById('resultAmount').innerHTML = '—';
+    }
+  }
+
+  function convert(direction) {
+    if (!rate) return;
+
+    const fromInput = document.getElementById('fromInput');
+    const toInput = document.getElementById('toInput');
+    const resultAmount = document.getElementById('resultAmount');
+    const resultUnit = isSwapped ? 'TWD' : 'THB';
+    const resultUnitName = isSwapped ? '新台幣' : '泰銖';
+
+    if (direction === 'from') {
+      const val = parseFloat(fromInput.value) || 0;
+      const converted = isSwapped ? val / rate : val * rate;
+      toInput.value = converted > 0 ? converted.toFixed(2) : '';
+      resultAmount.innerHTML = converted > 0
+        ? `${converted.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} <span class="result-unit">${resultUnit}</span>`
+        : `<span class="result-unit">—</span>`;
+    } else {
+      const val = parseFloat(toInput.value) || 0;
+      const converted = isSwapped ? val * rate : val / rate;
+      fromInput.value = converted > 0 ? converted.toFixed(2) : '';
+      const fromUnit = isSwapped ? 'THB' : 'TWD';
+      resultAmount.innerHTML = converted > 0
+        ? `${converted.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} <span class="result-unit">${fromUnit}</span>`
+        : `<span class="result-unit">—</span>`;
+    }
+  }
+
+  document.getElementById('fromInput').addEventListener('input', () => convert('from'));
+  document.getElementById('toInput').addEventListener('input', () => convert('to'));
+
+  document.getElementById('swapBtn').addEventListener('click', () => {
+    isSwapped = !isSwapped;
+
+    const fromTag = document.getElementById('fromTag');
+    const toTag = document.getElementById('toTag');
+    const fromLabel = document.getElementById('fromLabel');
+    const toLabel = document.getElementById('toLabel');
+
+    if (isSwapped) {
+      fromTag.textContent = 'THB';
+      toTag.textContent = 'TWD';
+      fromLabel.textContent = CURRENCIES.THB;
+      toLabel.textContent = CURRENCIES.TWD;
+      document.getElementById('rateBadge').textContent = rate ? `1 THB = ${(1/rate).toFixed(4)} TWD` : '—';
+    } else {
+      fromTag.textContent = 'TWD';
+      toTag.textContent = 'THB';
+      fromLabel.textContent = CURRENCIES.TWD;
+      toLabel.textContent = CURRENCIES.THB;
+      document.getElementById('rateBadge').textContent = rate ? `1 TWD = ${rate.toFixed(4)} THB` : '—';
+    }
+
+    // swap input values
+    const fromInput = document.getElementById('fromInput');
+    const toInput = document.getElementById('toInput');
+    const tmp = fromInput.value;
+    fromInput.value = toInput.value;
+    toInput.value = tmp;
+
+    convert('from');
+  });
+
+  fetchRate();
+</script>
+</body>
+</html>
